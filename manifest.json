@@ -1,0 +1,12 @@
+{
+  "name": "ספירת בשר ועופות",
+  "short_name": "בשר",
+  "start_url": "./",
+  "display": "standalone",
+  "background_color": "#FBE9E7",
+  "theme_color": "#B71C1C",
+  "icons": [
+    {"src": "./icon-192.png", "sizes": "192x192", "type": "image/png"},
+    {"src": "./icon-512.png", "sizes": "512x512", "type": "image/png"}
+  ]
+}

@@ -1,0 +1,722 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="בשר">
+<meta name="theme-color" content="#B71C1C">
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<title>ספירת בשר ועופות</title>
+<style>
+* { box-sizing:border-box; margin:0; padding:0; -webkit-tap-highlight-color:transparent; }
+body {
+  font-family:-apple-system,'Heebo',Arial,sans-serif;
+  background:#FBE9E7; direction:rtl;
+  min-height:100vh; padding-bottom:50px;
+}
+.header {
+  background:linear-gradient(135deg,#B71C1C 0%,#C62828 100%);
+  color:white; padding:16px 16px 14px;
+  position:sticky; top:0; z-index:100;
+  box-shadow:0 2px 8px rgba(0,0,0,.15);
+}
+.header-top { display:flex; justify-content:space-between; align-items:center; }
+.app-title { font-size:22px; font-weight:700; }
+.app-title span { font-size:26px; margin-left:6px; }
+.header-date { font-size:12px; opacity:.85; margin-top:2px; }
+.btn-clear {
+  background:rgba(255,255,255,.2); border:1px solid rgba(255,255,255,.4);
+  color:white; border-radius:20px; padding:6px 14px;
+  font-size:13px; cursor:pointer; font-family:inherit;
+}
+.total-bar {
+  background:white; border-bottom:2px solid #FFCDD2;
+  padding:10px 16px; display:flex; justify-content:space-between; align-items:center;
+}
+.total-bar .label { font-size:14px; color:#555; }
+.total-bar .count {
+  font-size:20px; font-weight:700; color:#B71C1C;
+  background:#FFEBEE; border-radius:20px; padding:2px 14px;
+  min-width:50px; text-align:center;
+}
+.section { margin:12px 12px 0; }
+.section-header {
+  display:flex; align-items:center; justify-content:center;
+  gap:10px; margin-bottom:8px; padding:4px 0;
+}
+.section-header .icon { font-size:26px; }
+.section-header .title {
+  font-size:24px; font-weight:800; color:#7F0000;
+  letter-spacing:.03em;
+}
+.sub-header {
+  font-size:18px; font-weight:700; color:#B71C1C;
+  padding:6px 10px 4px; margin-top:10px; margin-bottom:4px;
+  border-bottom:2px solid #FFCDD2; letter-spacing:.02em;
+}
+.col-head {
+  display:grid; grid-template-columns:1fr 68px;
+  gap:4px; padding:0 10px 4px;
+}
+.col-head span { font-size:11px; color:#888; font-weight:600; text-align:center; }
+.col-head span:first-child { text-align:right; }
+
+.product-row {
+  background:white; border:1px solid #E0E0E0; border-radius:12px;
+  padding:8px 10px; margin-bottom:6px;
+  transition:border-color .2s,background .2s;
+}
+.product-row.filled { border-color:#EF9A9A; background:#FFF5F5; }
+
+.product-top {
+  display:flex; justify-content:space-between; align-items:center;
+  margin-bottom:6px; gap:4px;
+}
+.product-name {
+  font-size:24px; font-weight:600; color:#1A1A1A;
+  display:flex; align-items:center; gap:5px;
+  flex:1; min-width:0;
+}
+.product-emoji { font-size:28px; flex-shrink:0; }
+.product-label { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+
+.barcode-section { flex-shrink:0; display:flex; flex-direction:column; align-items:center; gap:4px; }
+.bc-btn {
+  background:none; border:1px solid #ccc; border-radius:5px;
+  padding:3px 6px; cursor:pointer; display:flex; align-items:center;
+  color:#bbb; transition:all .15s; line-height:1;
+}
+.bc-btn.active { border-color:#EF9A9A; color:#B71C1C; background:#FFEBEE; }
+.bc-btn:disabled { cursor:default; opacity:.25; }
+.bc-img {
+  display:none; width:90vw; max-width:360px;
+  border:1px solid #ccc; border-radius:5px; cursor:pointer; margin-top:4px;
+}
+.bc-img.visible { display:block; }
+
+.product-bottom {
+  display:grid; grid-template-columns:1fr 68px;
+  gap:5px; align-items:center;
+}
+.entries-section { display:flex; flex-direction:column; gap:3px; }
+.entry-row { display:flex; align-items:center; gap:3px; justify-content:flex-end; }
+
+.box-input {
+  width:64px; min-width:64px; flex:none;
+  border:1px solid #D0D0D0; border-radius:8px;
+  padding:7px 4px; font-size:18px; font-weight:700;
+  text-align:center; background:#FAFAFA; color:#1A1A1A;
+  font-family:inherit; -webkit-appearance:none; appearance:none;
+}
+.box-input:focus { outline:none; border-color:#B71C1C; background:white; box-shadow:0 0 0 3px rgba(183,28,28,.15); }
+
+.btn-add-loc {
+  flex-shrink:0; width:26px; height:34px;
+  background:#FFEBEE; border:1px solid #FFCDD2; border-radius:8px;
+  color:#B71C1C; font-size:18px; font-weight:700; cursor:pointer;
+  display:flex; align-items:center; justify-content:center;
+}
+.btn-add-loc:active { background:#FFCDD2; }
+.btn-remove-loc {
+  flex-shrink:0; width:22px; height:34px;
+  background:#FFEBEE; border:1px solid #FFCDD2; border-radius:8px;
+  color:#C62828; font-size:15px; font-weight:700; cursor:pointer;
+  display:flex; align-items:center; justify-content:center;
+}
+.btn-remove-loc:active { background:#FFCDD2; }
+
+.total-val-box {
+  width:68px; border:2.5px solid #7F0000; border-radius:8px;
+  padding:6px 3px; font-size:16px; font-weight:800;
+  text-align:center; background:#FFEBEE; color:#7F0000;
+  min-height:34px; display:flex; align-items:center; justify-content:center;
+}
+
+.extras-card, .email-card, .actions-card {
+  background:white; border:1px solid #E0E0E0; border-radius:14px;
+  padding:14px 12px; margin:12px 12px 0;
+}
+.card-title { font-size:15px; font-weight:700; color:#555; margin-bottom:12px; display:flex; align-items:center; gap:6px; }
+.extra-row { display:grid; grid-template-columns:1fr 80px; gap:6px; margin-bottom:8px; align-items:center; }
+.extra-name-input {
+  border:1px solid #D0D0D0; border-radius:10px;
+  padding:9px 10px; font-size:15px; background:#FAFAFA;
+  color:#1A1A1A; font-family:inherit; width:100%; text-align:right;
+}
+.extra-name-input::placeholder { color:#BBB; font-size:13px; }
+.extra-name-input:focus { outline:none; border-color:#B71C1C; background:white; }
+.extra-qty-input {
+  border:1px solid #D0D0D0; border-radius:10px;
+  padding:9px 6px; font-size:17px; font-weight:700;
+  text-align:center; background:#FAFAFA; color:#1A1A1A;
+  font-family:inherit; -webkit-appearance:none; appearance:none; width:100%;
+}
+.extra-qty-input:focus { outline:none; border-color:#B71C1C; background:white; }
+.email-row { display:flex; align-items:center; gap:8px; margin-bottom:8px; }
+.email-label { font-size:14px; color:#555; font-weight:600; min-width:58px; }
+.email-input {
+  flex:1; border:1px solid #D0D0D0; border-radius:10px;
+  padding:9px 10px; font-size:14px; background:#FAFAFA;
+  color:#1A1A1A; font-family:inherit;
+}
+.email-input:focus { outline:none; border-color:#B71C1C; background:white; }
+.email-input.prefilled { border-color:#EF9A9A; background:#FFF5F5; }
+.btn-action {
+  display:block; width:100%; background:#B71C1C; color:white;
+  border:none; border-radius:12px; padding:16px;
+  font-size:17px; font-weight:700; cursor:pointer;
+  font-family:inherit; margin-bottom:10px;
+  box-shadow:0 3px 10px rgba(183,28,28,.25);
+  transition:background .2s, transform .1s;
+}
+.btn-action:active { transform:scale(.97); background:#7F0000; }
+.btn-action.secondary { background:#1565C0; box-shadow:0 3px 10px rgba(21,101,192,.25); }
+.btn-action.secondary:active { background:#0D47A1; }
+.btn-action.purple { background:#6A1B9A; box-shadow:0 3px 10px rgba(106,27,154,.25); }
+.btn-action.purple:active { background:#4A148C; }
+.install-banner {
+  background:#FFF8E1; border:1px solid #FFD54F; border-radius:12px;
+  margin:12px 12px 0; padding:12px 14px;
+  display:flex; gap:10px; align-items:flex-start;
+}
+.install-banner .ib-icon { font-size:22px; flex-shrink:0; margin-top:2px; }
+.install-banner .ib-text { font-size:13px; color:#5D4037; line-height:1.6; }
+.install-banner .ib-text b { color:#E65100; }
+.ib-close { background:none; border:none; font-size:18px; color:#999; cursor:pointer; padding:0; margin-right:auto; flex-shrink:0; }
+.toast {
+  display:none; position:fixed; bottom:30px; left:50%;
+  transform:translateX(-50%); background:#7F0000; color:white;
+  padding:14px 22px; border-radius:30px; font-size:15px; font-weight:600;
+  z-index:999; max-width:88vw; text-align:center; line-height:1.5;
+  box-shadow:0 4px 20px rgba(0,0,0,.25);
+}
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="header-top">
+    <div>
+      <div class="app-title"><span>🥩</span>ספירת בשר ועופות</div>
+      <div class="header-date" id="dateStr"></div>
+    </div>
+    <button class="btn-clear" onclick="clearAll()">🗑 נקה</button>
+  </div>
+</div>
+
+<div class="total-bar">
+  <span class="label">פריטים שנספרו:</span>
+  <span class="count" id="total-count">0</span>
+</div>
+
+<div class="install-banner" id="installBanner">
+  <span class="ib-icon">📲</span>
+  <div class="ib-text">
+    <b>להוסיף לרקע הבית:</b> פתח ב-Safari ← לחץ על <b>שתף ⬆</b> ← <b>"הוסף למסך הבית"</b>
+  </div>
+  <button class="ib-close" onclick="document.getElementById('installBanner').style.display='none'">✕</button>
+</div>
+
+<div class="section">
+  <div class="section-header">
+    <span class="icon">🍗</span>
+    <span class="title">עופות</span>
+  </div>
+  <div class="col-head">
+    <span>מוצר</span><span>כמות</span>
+  </div>
+  <div id="poultry-list"></div>
+</div>
+
+<div class="section">
+  <div class="section-header">
+    <span class="icon">🥩</span>
+    <span class="title">בשר בקר</span>
+  </div>
+  <div class="col-head">
+    <span>מוצר</span><span>כמות</span>
+  </div>
+  <div id="beef-list"></div>
+</div>
+
+<div class="extras-card">
+  <div class="card-title">📝 מוצרים נוספים</div>
+  <div id="extras-rows"></div>
+</div>
+
+<div class="email-card">
+  <div class="card-title">📧 כתובות דוא"ל</div>
+  <div class="email-row">
+    <span class="email-label">בית:</span>
+    <input type="email" class="email-input prefilled" id="email-home" value="evgenchuk1@gmail.com" dir="ltr">
+  </div>
+  <div class="email-row">
+    <span class="email-label">עבודה:</span>
+    <input type="email" class="email-input" id="email-work" placeholder="יתווסף בהמשך" dir="ltr">
+  </div>
+</div>
+
+<div class="actions-card">
+  <div class="card-title">⚡ פעולות</div>
+  <button class="btn-action" onclick="sendEmail()">📧 שלח דו"ח במייל</button>
+  <button class="btn-action secondary" onclick="shareReport()">📤 שתף דו"ח</button>
+  <button class="btn-action purple" onclick="downloadWordReport()">📄 הורד דו"ח Word</button>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const BARCODE_SVG = `<svg width="20" height="13" viewBox="0 0 20 13" fill="currentColor">
+  <rect x="0" y="0" width="1.8" height="13"/>
+  <rect x="3.2" y="0" width="0.9" height="13"/>
+  <rect x="5.2" y="0" width="2.2" height="13"/>
+  <rect x="8.8" y="0" width="0.9" height="13"/>
+  <rect x="10.8" y="0" width="1.8" height="13"/>
+  <rect x="13.8" y="0" width="0.9" height="13"/>
+  <rect x="15.8" y="0" width="2.2" height="13"/>
+  <rect x="19.2" y="0" width="0.8" height="13"/>
+</svg>`;
+
+/* ── Data — עוף ──────────────────────────────────────────── */
+const chicken = [
+  {id:'c1',  name:'עופין טרי ארוז',           emoji:'🍗', barcodeNum:'9817106'},
+  {id:'c2',  name:'עוף שלם טרי א.דיל ארוז',   emoji:'🍗', barcodeNum:'9802191'},
+  {id:'c3',  name:'פרגיות עוף טרי ארוז',       emoji:'🍗', barcodeNum:'9811896'},
+  {id:'c4',  name:'שניצל עוף טרי ארוז',        emoji:'🍗', barcodeNum:'9811490'},
+  {id:'c5',  name:'שניצל דק טרי ארוז',         emoji:'🍗', barcodeNum:'9819137'},
+  {id:'c6',  name:'פילה עוף טרי ארוז',         emoji:'🍗', barcodeNum:'9814316'},
+  {id:'c7',  name:'חזה עוף טרי',               emoji:'🍗', barcodeNum:'9806571'},
+  {id:'c8',  name:'ירכי עוף טרי ארוז',         emoji:'🍗', barcodeNum:'9803815'},
+  {id:'c9',  name:'כרעי עוף טרי ארוז',         emoji:'🍗', barcodeNum:'9802221'},
+  {id:'c10', name:'שוקיים עוף טרי ארוז',       emoji:'🍗', barcodeNum:'9810967'},
+  {id:'c11', name:'כנפי עוף טרי',              emoji:'🍗', barcodeNum:'9804591'},
+  {id:'c12', name:'קוקטייל טרי ארוז',          emoji:'🍗', barcodeNum:'9802481'},
+  {id:'c13', name:'לב עוף טרי ארוז',           emoji:'🍗', barcodeNum:'9807622'},
+  {id:'c14', name:'כבד עוף טרי ארוז',          emoji:'🍗', barcodeNum:'9807592'},
+  {id:'c15', name:'קורקבן עוף טרי ארוז',       emoji:'🍗', barcodeNum:'9814347'},
+];
+
+/* ── Data — הודו ─────────────────────────────────────────── */
+const turkey = [
+  {id:'t1',  name:'חזה הודו טרי',              emoji:'🦃', barcodeNum:'9819267'},
+  {id:'t2',  name:'נתחי הודו טרי',             emoji:'🦃', barcodeNum:'9819144'},
+  {id:'t3',  name:'שוארמה הודו טרי ארוז',      emoji:'🦃', barcodeNum:'9819175'},
+  {id:'t4',  name:'שוק הודו טרי',              emoji:'🦃', barcodeNum:'9819151'},
+  {id:'t5',  name:'כנף הודו טרי',              emoji:'🦃', barcodeNum:'9819199'},
+  {id:'t6',  name:'לב הודו טרי',               emoji:'🦃', barcodeNum:'9819250'},
+  {id:'t7',  name:'כבד הודו טרי',              emoji:'🦃', barcodeNum:'9819236'},
+  {id:'t8',  name:'גרון הודו טרי',             emoji:'🦃', barcodeNum:'9819212'},
+  {id:'t9',  name:'קורקבן הודו טרי',           emoji:'🦃', barcodeNum:'9819243'},
+];
+
+const poultry = [...chicken, ...turkey];
+
+/* ── Data — בשר בקר ──────────────────────────────────────── */
+const beef = [
+  {id:'b1',  name:'אסאדו עם עצם טרי',          emoji:'🥩', barcodeNum:'7290000928425'},
+  {id:'b2',  name:'צווארי עם עצם טרי',          emoji:'🥩', barcodeNum:'7290000928432'},
+  {id:'b3',  name:'חזה בשר עצם טרי',            emoji:'🥩', barcodeNum:'7290000928463'},
+  {id:'b4',  name:'צלעות עם עצם',               emoji:'🥩', barcodeNum:'7290000928484'},
+  {id:'b5',  name:'אוסובוקו טרי',               emoji:'🥩', barcodeNum:'7290000928500'},
+  {id:'b6',  name:'אנטריקוט עם עצם טרי',        emoji:'🥩', barcodeNum:'7290000928524'},
+  {id:'b7',  name:'אוזית טרי',                   emoji:'🥩', barcodeNum:'7290000928555'},
+  {id:'b8',  name:'צאק טרי',                    emoji:'🥩', barcodeNum:'7290000928593'},
+  {id:'b9',  name:'וייס ברטן טרי',              emoji:'🥩', barcodeNum:'7290000928598'},
+  {id:'b10', name:'כף טרי',                     emoji:'🥩', barcodeNum:'7290000928609'},
+  {id:'b11', name:'בשר ראש טרי',                emoji:'🥩', barcodeNum:'7290000928715'},
+  {id:'b12', name:'לשון טרי',                   emoji:'🥩', barcodeNum:'7290000928854'},
+  {id:'b13', name:'כתף עם עצם',                 emoji:'🥩', barcodeNum:'7290000928862'},
+  {id:'b14', name:'פיקניה טרי מוכשר',            emoji:'🥩', barcodeNum:'7290000933133'},
+  {id:'b15', name:'קשתנית טרי מוכשר',            emoji:'🥩', barcodeNum:'7290000933164'},
+  {id:'b16', name:'בשר טחון טרי',               emoji:'🥩', barcodeNum:'7290000933740'},
+  {id:'b17', name:'בריסקט טרי מוכשר',           emoji:'🥩', barcodeNum:'9392272'},
+  {id:'b18', name:'סינטה טרי מוכשר',            emoji:'🥩', barcodeNum:'9393101'},
+  {id:'b19', name:'כתף טרי מוכשר',              emoji:'🥩', barcodeNum:'9393088'},
+  {id:'b20', name:'צלי כתף טרי מוכשר',          emoji:'🥩', barcodeNum:'9393255'},
+  {id:'b21', name:'פילה בקר טרי מוכשר',         emoji:'🥩', barcodeNum:'9393149'},
+  {id:'b22', name:'שריר טרי מוכשר',             emoji:'🥩', barcodeNum:'9393293'},
+  {id:'b23', name:'נתח קצבים סרעפת',            emoji:'🥩', barcodeNum:'9393651'},
+  {id:'b24', name:'אנטריקוט טרי מוכשר',         emoji:'🥩', barcodeNum:'9393125'},
+  {id:'b25', name:'סטייק דנוור טרי מוכשר',      emoji:'🥩', barcodeNum:'9394092'},
+  {id:'b26', name:'צלעות טרי',                  emoji:'🥩', barcodeNum:'9393262'},
+];
+
+/* ── Row builder ─────────────────────────────────────────── */
+function makeRow(item) {
+  const div = document.createElement('div');
+  div.className = 'product-row';
+  div.id = 'row-' + item.id;
+
+  const bcPart = item.barcodeNum
+    ? `<button class="bc-btn active" onclick="toggleBarcode('${item.id}')" title="הצג ברקוד">${BARCODE_SVG}</button>
+       <canvas class="bc-img" id="bc-${item.id}" onclick="toggleBarcode('${item.id}')"></canvas>`
+    : `<button class="bc-btn" disabled title="אין ברקוד">${BARCODE_SVG}</button>`;
+
+  div.innerHTML = `
+    <div class="product-top">
+      <div class="product-name">
+        <span class="product-emoji">${item.emoji}</span>
+        <span class="product-label">${item.name}</span>
+      </div>
+      <div class="barcode-section">${bcPart}</div>
+    </div>
+    <div class="product-bottom">
+      <div class="entries-section" id="entries-${item.id}">
+        <div class="entry-row">
+          <input type="number" class="box-input" data-id="${item.id}"
+            placeholder="0" min="0" step="1" inputmode="numeric"
+            oninput="calcRow('${item.id}')">
+          <button class="btn-add-loc" onclick="addEntry('${item.id}')" title="הוסף מיקום">+</button>
+        </div>
+      </div>
+      <div class="total-val-box" id="tot-${item.id}">—</div>
+    </div>`;
+  return div;
+}
+
+function buildPoultryRows() {
+  const c = document.getElementById('poultry-list');
+
+  const chHdr = document.createElement('div');
+  chHdr.className = 'sub-header';
+  chHdr.textContent = '🍗 עוף';
+  c.appendChild(chHdr);
+  chicken.forEach(item => c.appendChild(makeRow(item)));
+
+  const tuHdr = document.createElement('div');
+  tuHdr.className = 'sub-header';
+  tuHdr.textContent = '🦃 הודו';
+  c.appendChild(tuHdr);
+  turkey.forEach(item => c.appendChild(makeRow(item)));
+}
+
+function buildRows(items, cid) {
+  const c = document.getElementById(cid);
+  items.forEach(item => c.appendChild(makeRow(item)));
+}
+
+/* ── Multi-location ──────────────────────────────────────── */
+function addEntry(id) {
+  const area = document.getElementById('entries-' + id);
+  const row = document.createElement('div');
+  row.className = 'entry-row';
+  row.innerHTML = `
+    <input type="number" class="box-input" data-id="${id}"
+      placeholder="0" min="0" step="1" inputmode="numeric"
+      oninput="calcRow('${id}')">
+    <button class="btn-remove-loc" onclick="removeEntry(this,'${id}')" title="הסר">×</button>`;
+  area.appendChild(row);
+}
+
+function removeEntry(btn, id) {
+  btn.closest('.entry-row').remove();
+  calcRow(id);
+}
+
+/* ── Calculation ─────────────────────────────────────────── */
+function calcRow(id) {
+  const inputs = document.querySelectorAll(`.box-input[data-id="${id}"]`);
+  let total = 0;
+  inputs.forEach(inp => { total += parseFloat(inp.value) || 0; });
+
+  const totEl = document.getElementById('tot-' + id);
+  if (totEl) totEl.textContent = total > 0 ? total : '—';
+
+  const rowEl = document.getElementById('row-' + id);
+  if (rowEl) rowEl.classList.toggle('filled', total > 0);
+  updateTotal();
+}
+
+function toggleBarcode(id) {
+  document.getElementById('bc-' + id)?.classList.toggle('visible');
+}
+
+/* ── Extras ──────────────────────────────────────────────── */
+function buildExtras() {
+  const c = document.getElementById('extras-rows');
+  for (let i = 0; i < 5; i++) {
+    const div = document.createElement('div');
+    div.className = 'extra-row';
+    div.innerHTML = `
+      <input type="text" class="extra-name-input" id="extra-name-${i}" placeholder="שם מוצר ${i+1}">
+      <input type="number" class="extra-qty-input" id="extra-qty-${i}"
+        placeholder="כמות" min="0" step="1" inputmode="numeric" oninput="updateTotal()">`;
+    c.appendChild(div);
+  }
+}
+
+function updateTotal() {
+  let n = 0;
+  [...poultry, ...beef].forEach(item => {
+    let total = 0;
+    document.querySelectorAll(`.box-input[data-id="${item.id}"]`)
+      .forEach(inp => { total += parseFloat(inp.value) || 0; });
+    if (total > 0) n++;
+  });
+  for (let i = 0; i < 5; i++) {
+    if (parseFloat(document.getElementById('extra-qty-' + i)?.value) || 0) n++;
+  }
+  document.getElementById('total-count').textContent = n;
+}
+
+/* ── Clear ───────────────────────────────────────────────── */
+function clearAll() {
+  if (!confirm('למחוק את כל הנתונים?')) return;
+  [...poultry, ...beef].forEach(item => {
+    const area = document.getElementById('entries-' + item.id);
+    if (area) {
+      const rows = area.querySelectorAll('.entry-row');
+      rows.forEach((row, i) => {
+        if (i === 0) { const inp = row.querySelector('.box-input'); if (inp) inp.value = ''; }
+        else row.remove();
+      });
+    }
+    const tEl = document.getElementById('tot-' + item.id);
+    if (tEl) tEl.textContent = '—';
+    document.getElementById('row-' + item.id)?.classList.remove('filled');
+    document.getElementById('bc-' + item.id)?.classList.remove('visible');
+  });
+  for (let i = 0; i < 5; i++) {
+    const n = document.getElementById('extra-name-' + i);
+    const q = document.getElementById('extra-qty-' + i);
+    if (n) n.value = ''; if (q) q.value = '';
+  }
+  updateTotal();
+}
+
+/* ── Data collector ──────────────────────────────────────── */
+function getData() {
+  const rows = [];
+  const proc = (item, cat) => {
+    const inputs = document.querySelectorAll(`.box-input[data-id="${item.id}"]`);
+    const parts = [];
+    let total = 0;
+    inputs.forEach(inp => { const v = parseFloat(inp.value) || 0; if (v > 0) parts.push(v); total += v; });
+    if (total > 0) rows.push({ cat, name: item.name, total, parts });
+  };
+  chicken.forEach(item => proc(item, 'עוף'));
+  turkey.forEach(item => proc(item, 'הודו'));
+  beef.forEach(item => proc(item, 'בשר בקר'));
+  for (let i = 0; i < 5; i++) {
+    const name = (document.getElementById('extra-name-' + i)?.value || '').trim();
+    const qty = parseFloat(document.getElementById('extra-qty-' + i)?.value) || 0;
+    if (name && qty > 0) rows.push({ cat: 'נוסף', name, total: qty, parts: [] });
+  }
+  return rows;
+}
+
+function buildReport(rows, dateStr) {
+  let txt = 'ספירת בשר ועופות — ' + dateStr + '\n' + '='.repeat(40) + '\n';
+  let lastCat = '';
+  rows.forEach(r => {
+    if (r.cat !== lastCat) { txt += '\n' + r.cat + ':\n'; lastCat = r.cat; }
+    const qStr = r.parts.length > 1 ? r.parts.join('+') + '=' + r.total : '' + r.total;
+    txt += '  • ' + r.name + ': ' + qStr + '\n';
+  });
+  txt += '\nסה"כ פריטים: ' + rows.length;
+  return txt;
+}
+
+/* ── Actions ─────────────────────────────────────────────── */
+async function sendEmail() {
+  const rows = getData();
+  if (!rows.length) { showToast('לא הוזנו נתונים'); return; }
+  const e1 = document.getElementById('email-home').value.trim();
+  const e2 = document.getElementById('email-work').value.trim();
+  const to = [e1, e2].filter(Boolean).join(',');
+  if (!to) { showToast('נא להזין כתובת דוא"ל'); return; }
+  const today = new Date().toLocaleDateString('he-IL');
+  const filename = 'ספירה_בשר_' + today.replace(/\//g, '-') + '.docx';
+
+  showToast('מכין קובץ Word...');
+  const blob = await generateWordBlob();
+  if (!blob) return;
+
+  const file = new File([blob], filename,
+    { type: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' });
+
+  if (navigator.canShare && navigator.canShare({ files: [file] })) {
+    try {
+      await navigator.share({
+        files: [file],
+        title: 'ספירת בשר ועופות — ' + today,
+        text: buildReport(rows, today)
+      });
+      showToast('✅ הקובץ שותף!');
+    } catch(e) {
+      if (e.name !== 'AbortError') showToast('שגיאה: ' + e.message);
+    }
+    return;
+  }
+
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = filename;
+  a.click();
+
+  const sub  = encodeURIComponent('ספירת בשר ועופות — ' + today);
+  const body = encodeURIComponent(buildReport(rows, today) +
+    '\n\n📎 קובץ Word הורד אוטומטית — צרף אותו למייל זה');
+  const gmailUrl = 'https://mail.google.com/mail/?view=cm&fs=1&to=' +
+    encodeURIComponent(to) + '&su=' + sub + '&body=' + body;
+  setTimeout(() => window.open(gmailUrl, '_blank'), 800);
+  showToast('✅ Word הורד + Gmail נפתח — צרף את הקובץ');
+}
+
+function shareReport() {
+  const rows = getData();
+  if (!rows.length) { showToast('לא הוזנו נתונים'); return; }
+  const today = new Date().toLocaleDateString('he-IL');
+  const text = buildReport(rows, today);
+  if (navigator.share) navigator.share({ title: 'ספירת בשר', text }).catch(() => {});
+  else navigator.clipboard?.writeText(text).then(() => showToast('הדו"ח הועתק ללוח')).catch(() => {});
+}
+
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.style.display = 'block';
+  setTimeout(() => t.style.display = 'none', 5000);
+}
+
+/* ── Init ────────────────────────────────────────────────── */
+const now = new Date();
+document.getElementById('dateStr').textContent =
+  now.toLocaleDateString('he-IL', { weekday:'long', year:'numeric', month:'long', day:'numeric' });
+buildPoultryRows();
+buildRows(beef, 'beef-list');
+buildExtras();
+
+function renderBarcodes() {
+  [...poultry, ...beef].forEach(item => {
+    if (!item.barcodeNum) return;
+    const canvas = document.getElementById('bc-' + item.id);
+    if (!canvas) return;
+    try {
+      const is13 = item.barcodeNum.length === 13;
+      JsBarcode(canvas, item.barcodeNum, {
+        format: is13 ? 'EAN13' : 'CODE128',
+        lineColor: '#000',
+        width: is13 ? 3 : 2,
+        height: is13 ? 100 : 80,
+        displayValue: true,
+        fontSize: 20,
+        margin: 10
+      });
+    } catch(e) {}
+  });
+}
+const _jsbScript = document.createElement('script');
+_jsbScript.src = 'https://cdn.jsdelivr.net/npm/jsbarcode@3.11.6/dist/JsBarcode.all.min.js';
+_jsbScript.onload = renderBarcodes;
+document.head.appendChild(_jsbScript);
+
+if (window.navigator.standalone || window.matchMedia('(display-mode: standalone)').matches)
+  document.getElementById('installBanner').style.display = 'none';
+
+if ('serviceWorker' in navigator) navigator.serviceWorker.register('./sw.js').catch(() => {});
+
+/* ── Word report ─────────────────────────────────────────── */
+async function loadHtmlDocx() {
+  if (window.htmlDocx) return;
+  return new Promise((resolve, reject) => {
+    const s = document.createElement('script');
+    s.src = 'https://cdn.jsdelivr.net/npm/html-docx-js@0.3.1/dist/html-docx.js';
+    s.onload = () => window.htmlDocx ? resolve() : reject('not found');
+    s.onerror = () => reject('load error');
+    document.head.appendChild(s);
+  });
+}
+
+async function buildGroupRows(items) {
+  let rows = '';
+  for (const item of items) {
+    const inputs = document.querySelectorAll(`.box-input[data-id="${item.id}"]`);
+    let total = 0;
+    inputs.forEach(inp => { total += parseFloat(inp.value) || 0; });
+    const qtyStr = total > 0 ? String(total) : '';
+    const qtyColor = qtyStr ? '#7F0000' : '#AAAAAA';
+    rows += `
+      <tr>
+        <td style="text-align:center;vertical-align:middle;font-size:22pt;padding:8px;">${item.emoji}</td>
+        <td style="text-align:center;vertical-align:middle;font-family:Arial;font-size:20pt;padding:8px;">${item.name}</td>
+        <td style="text-align:center;vertical-align:middle;font-family:Arial;font-size:26pt;font-weight:bold;color:${qtyColor};padding:8px;width:100px;">${qtyStr}</td>
+      </tr>`;
+  }
+  return rows;
+}
+
+async function generateWordBlob() {
+  try { await loadHtmlDocx(); }
+  catch(e) { showToast('שגיאה: ' + e); return null; }
+
+  const today = new Date().toLocaleDateString('he-IL');
+  const chRows  = await buildGroupRows(chicken);
+  const tuRows  = await buildGroupRows(turkey);
+  const bfRows  = await buildGroupRows(beef);
+
+  const secHdr = (emoji, title, bg) =>
+    `<tr><td colspan="3" style="background:${bg};text-align:center;font-family:Arial;` +
+    `font-size:20pt;font-weight:bold;padding:10px;">${emoji} ${title}</td></tr>`;
+
+  const html = `<!DOCTYPE html>
+<html dir="rtl"><head><meta charset="UTF-8"></head><body>
+<h2 style="text-align:center;font-family:Arial;font-size:24pt;margin-bottom:16px;">
+  דיווח ספירת בשר ועופות &mdash; ${today}
+</h2>
+<table border="1" style="width:100%;border-collapse:collapse;font-family:Arial;">
+  <thead>
+    <tr style="background:#FFCDD2;">
+      <th style="padding:10px;font-size:16pt;text-align:center;width:60px;"></th>
+      <th style="padding:10px;font-size:16pt;text-align:center;">מוצר</th>
+      <th style="padding:10px;font-size:16pt;text-align:center;">כמות</th>
+    </tr>
+  </thead>
+  <tbody>
+    ${secHdr('🍗', 'עוף', '#FFF9C4')}
+    ${chRows}
+    ${secHdr('🦃', 'הודו', '#FFF9C4')}
+    ${tuRows}
+    ${secHdr('🥩', 'בשר בקר', '#FFCCBC')}
+    ${bfRows}
+  </tbody>
+</table>
+</body></html>`;
+
+  return window.htmlDocx.asBlob(html, {
+    orientation: 'portrait',
+    margins: { top: 600, right: 600, bottom: 600, left: 600 }
+  });
+}
+
+async function downloadWordReport() {
+  showToast('מכין דו"ח Word...');
+  const blob = await generateWordBlob();
+  if (!blob) return;
+  const today = new Date().toLocaleDateString('he-IL');
+  const filename = 'ספירה_בשר_' + today.replace(/\//g, '-') + '.docx';
+  const file = new File([blob], filename,
+    { type: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' });
+
+  if (navigator.canShare && navigator.canShare({ files: [file] })) {
+    try {
+      await navigator.share({ files: [file], title: filename });
+      showToast('✅ הקובץ שותף!');
+    } catch(e) {
+      if (e.name !== 'AbortError') showToast('שגיאה: ' + e.message);
+    }
+    return;
+  }
+
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = filename;
+  a.click();
+  showToast('✅ קובץ Word הורד!');
+}
+</script>
+</body>
+</html>
