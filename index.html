@@ -33,6 +33,21 @@ body {
   color:white; border-radius:20px; padding:6px 14px;
   font-size:13px; cursor:pointer; font-family:inherit;
 }
+.search-bar {
+  display:none; margin-top:10px;
+}
+.search-bar.open { display:block; }
+.search-input {
+  width:100%; border:none; border-radius:20px;
+  padding:10px 14px; font-size:16px; font-family:inherit;
+  background:rgba(255,255,255,.92); color:#1A1A1A;
+  outline:none; text-align:right;
+}
+.search-input::placeholder { color:#999; }
+.product-row.search-highlight {
+  border-color:#F9A825; background:#FFFDE7;
+  box-shadow:0 0 0 3px rgba(249,168,37,.35);
+}
 .total-bar {
   background:white; border-bottom:2px solid #FFCDD2;
   padding:10px 16px; display:flex; justify-content:space-between; align-items:center;
@@ -204,7 +219,14 @@ body {
       <div class="app-title"><span>🥩</span>ספירת בשר ועופות</div>
       <div class="header-date" id="dateStr"></div>
     </div>
-    <button class="btn-clear" onclick="clearAll()">🗑 נקה</button>
+    <div style="display:flex;gap:8px;align-items:center;">
+      <button class="btn-clear" id="btn-search" onclick="toggleSearch()">🔍</button>
+      <button class="btn-clear" onclick="clearAll()">🗑 נקה</button>
+    </div>
+  </div>
+  <div class="search-bar" id="search-bar">
+    <input type="text" class="search-input" id="search-input"
+      placeholder="חיפוש מוצר..." oninput="doSearch(this.value)" dir="rtl" autocomplete="off">
   </div>
 </div>
 
@@ -691,6 +713,47 @@ async function generateWordBlob() {
     margins: { top: 600, right: 600, bottom: 600, left: 600 }
   });
 }
+
+/* ── Search ──────────────────────────────────────────────── */
+function toggleSearch() {
+  const bar = document.getElementById('search-bar');
+  const input = document.getElementById('search-input');
+  const btn = document.getElementById('btn-search');
+  const isOpen = bar.classList.toggle('open');
+  if (isOpen) {
+    input.focus();
+    btn.textContent = '✕';
+  } else {
+    input.value = '';
+    clearSearchHighlight();
+    btn.textContent = '🔍';
+  }
+}
+
+function doSearch(val) {
+  clearSearchHighlight();
+  if (!val.trim()) return;
+  const q = val.trim().toLowerCase();
+  const match = [...poultry, ...beef].find(item => item.name.toLowerCase().includes(q));
+  if (match) {
+    const el = document.getElementById('row-' + match.id);
+    if (el) {
+      el.classList.add('search-highlight');
+      el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+  }
+}
+
+function clearSearchHighlight() {
+  document.querySelectorAll('.search-highlight').forEach(el => el.classList.remove('search-highlight'));
+}
+
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') {
+    const bar = document.getElementById('search-bar');
+    if (bar.classList.contains('open')) toggleSearch();
+  }
+});
 
 async function downloadWordReport() {
   showToast('מכין דו"ח Word...');
